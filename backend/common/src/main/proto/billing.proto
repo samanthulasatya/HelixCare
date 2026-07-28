@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package billing;
+
+option java_multiple_files = true;
+option java_package = "com.hospital.management.grpc.generated";
+option java_outer_classname = "BillingProto";
+
+service BillingService {
+    rpc GenerateInvoice (GenerateInvoiceRequest) returns (GenerateInvoiceResponse);
+}
+
+message GenerateInvoiceRequest {
+    int64 appointmentId = 1;
+    int64 patientId = 2;
+    double amount = 3;
+}
+
+message GenerateInvoiceResponse {
+    int64 invoiceId = 1;
+    int64 appointmentId = 2;
+    int64 patientId = 3;
+    double amount = 4;
+    string status = 5; // PENDING, PAID, FAILED
+    string generatedAt = 6;
+}
