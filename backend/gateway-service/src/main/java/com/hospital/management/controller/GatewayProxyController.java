@@ -67,7 +67,22 @@ public class GatewayProxyController {
             HttpEntity<String> httpEntity = new HttpEntity<>(body, forwardHeaders);
             HttpMethod method = HttpMethod.valueOf(request.getMethod());
 
-            return restTemplate.exchange(new URI(targetUrl), method, httpEntity, byte[].class);
+            ResponseEntity<byte[]> responseEntity = restTemplate.exchange(new URI(targetUrl), method, httpEntity, byte[].class);
+
+            // Filter response headers from downstream microservices to avoid duplicate chunking/length conflicts in Nginx
+            HttpHeaders responseHeaders = new HttpHeaders();
+            if (responseEntity.getHeaders() != null) {
+                responseEntity.getHeaders().forEach((name, values) -> {
+                    if (!name.equalsIgnoreCase("transfer-encoding") && 
+                        !name.equalsIgnoreCase("connection") && 
+                        !name.equalsIgnoreCase("content-length") &&
+                        !name.equalsIgnoreCase("keep-alive")) {
+                        responseHeaders.put(name, values);
+                    }
+                });
+            }
+
+            return new ResponseEntity<>(responseEntity.getBody(), responseHeaders, responseEntity.getStatusCode());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body("Error routing request: " + e.getMessage());
         }
