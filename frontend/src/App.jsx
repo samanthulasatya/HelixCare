@@ -11,10 +11,10 @@ import CallingOverlay from './components/CallingOverlay';
 
 const SERVICES = {
     GATEWAY: 'http://16.16.208.91:8080',
-    PATIENT: 'http://16.16.208.91:8085',
-    DOCTOR: 'http://16.16.208.91:8086',
-    APPOINTMENT: 'http://16.16.208.91:8087',
-    BILLING: 'http://16.16.208.91:8088'
+    PATIENT: 'http://16.16.208.91:8080',
+    DOCTOR: 'http://16.16.208.91:8080',
+    APPOINTMENT: 'http://16.16.208.91:8080',
+    BILLING: 'http://16.16.208.91:8080'
 };
 
 export default function App() {
