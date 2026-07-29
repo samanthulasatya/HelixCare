@@ -664,7 +664,23 @@ export default function App() {
             )}
 
             {/* Main view content body */}
-            <main className="main-content" style={{ padding: token ? '40px' : '0px', overflowY: 'auto' }}>
+            <main 
+                className="main-content" 
+                style={token ? { 
+                    padding: '40px', 
+                    overflowY: 'auto' 
+                } : { 
+                    padding: '0px', 
+                    width: '100%',
+                    height: 'auto',
+                    minHeight: '100vh',
+                    overflowY: 'visible',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }}
+            >
                 {!token ? (
                     <Auth onAuthSuccess={handleAuthSuccess} />
                 ) : (

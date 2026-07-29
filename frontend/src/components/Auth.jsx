@@ -373,7 +373,7 @@ export default function Auth({ onAuthSuccess }) {
                                 </div>
                             </div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                            <div className="form-grid">
                                 <div className="form-group">
                                     <label>Username</label>
                                     <input type="text" required value={username} onChange={e => setUsername(e.target.value)} />
