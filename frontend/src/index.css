@@ -1669,3 +1669,12 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     to { transform: translateY(0); opacity: 1; }
 }
 
+@keyframes bellBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+.notification-bell.has-unread {
+    animation: bellBounce 1.5s infinite ease-in-out;
+}
+

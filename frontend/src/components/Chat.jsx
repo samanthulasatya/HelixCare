@@ -39,6 +39,19 @@ export default function Chat({
     // Dynamic shared files state for doctor lookup
     const [sharedFiles, setSharedFiles] = useState([]);
 
+    // Auto-scroll ref and hook
+    const messagesEndRef = useRef(null);
+    
+    const scrollToBottom = () => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
+    React.useEffect(() => {
+        scrollToBottom();
+    }, [chatMessages, selectedChatSession]);
+
     const loadSharedFiles = () => {
         if (!selectedChatSession) return;
         const patientId = selectedChatSession.patient.id;
@@ -245,7 +258,7 @@ export default function Chat({
                         {selectedChatSession ? (
                             <>
                                 {/* Header */}
-                                <div className="chat-header">
+                                <div className="chat-header" style={{ flexShrink: 0 }}>
                                     <div>
                                         <h4 className="title" style={{ margin: 0 }}>
                                             {user.role === 'PATIENT' ? 
@@ -492,10 +505,11 @@ export default function Chat({
                                             </div>
                                         );
                                     })}
+                                    <div ref={messagesEndRef} />
                                 </div>
 
                                 {/* Chat input controls */}
-                                <form onSubmit={handleSend} className="chat-input-row" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                <form onSubmit={handleSend} className="chat-input-row" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0 }}>
                                     <input 
                                         type="file" 
                                         ref={fileInputRef} 

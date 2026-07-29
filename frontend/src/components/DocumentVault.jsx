@@ -1,5 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+const highlightMatch = (text, query) => {
+    if (!query) return text;
+    const parts = text.split(new RegExp(`(${query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'));
+    return parts.map((part, i) => 
+        part.toLowerCase() === query.toLowerCase() ? 
+            <mark key={i} style={{ background: 'rgba(157, 78, 221, 0.4)', color: 'inherit', padding: '0 2px', borderRadius: '3px', fontWeight: 'bold' }}>{part}</mark> : 
+            part
+    );
+};
+
 export default function DocumentVault({ user, token, appointments, searchQuery }) {
     const [vaultFiles, setVaultFiles] = useState([]);
     const [selectedPatientId, setSelectedPatientId] = useState('');
@@ -266,10 +276,10 @@ export default function DocumentVault({ user, token, appointments, searchQuery }
                                                 )}
                                                 <div style={{ minWidth: 0, flexGrow: 1 }}>
                                                     <span style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 700 }}>
-                                                        {file.category}
+                                                        {highlightMatch(file.category, searchQuery)}
                                                     </span>
                                                     <div style={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={file.name}>
-                                                        {file.name}
+                                                        {highlightMatch(file.name, searchQuery)}
                                                     </div>
                                                 </div>
                                             </div>

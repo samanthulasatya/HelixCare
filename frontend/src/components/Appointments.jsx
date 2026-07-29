@@ -6,6 +6,16 @@ const SERVICES = {
     APPOINTMENT: 'https://helixcare.duckdns.org'
 };
 
+const highlightMatch = (text, query) => {
+    if (!query) return text;
+    const parts = text.split(new RegExp(`(${query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'));
+    return parts.map((part, i) => 
+        part.toLowerCase() === query.toLowerCase() ? 
+            <mark key={i} style={{ background: 'rgba(157, 78, 221, 0.4)', color: 'inherit', padding: '0 2px', borderRadius: '3px', fontWeight: 'bold' }}>{part}</mark> : 
+            part
+    );
+};
+
 export default function Appointments({ user, token, appointments, reloadAppointments, searchQuery: globalSearchQuery }) {
     const [doctors, setDoctors] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -36,10 +46,11 @@ export default function Appointments({ user, token, appointments, reloadAppointm
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         setBookDate(tomorrow.toISOString().split('T')[0]);
-    }, [searchQuery, specFilter]);
+    }, [searchQuery, specFilter, globalSearchQuery]);
 
     const loadDoctors = () => {
-        const queryParam = searchQuery || specFilter ? `?query=${searchQuery || specFilter}` : '';
+        const activeSearch = searchQuery || globalSearchQuery || specFilter;
+        const queryParam = activeSearch ? `?query=${activeSearch}` : '';
         fetch(`${SERVICES.DOCTOR}/api/doctors${queryParam}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
@@ -86,7 +97,13 @@ export default function Appointments({ user, token, appointments, reloadAppointm
             })
         })
         .then(res => {
-            if (!res.ok) return res.text().then(text => { throw new Error(text) });
+            if (!res.ok) {
+                return res.json().then(json => {
+                    throw new Error(json.message || "Booking failed.");
+                }).catch(() => {
+                    return res.text().then(text => { throw new Error(text || "Booking failed.") });
+                });
+            }
             return res.json();
         })
         .then(() => {
@@ -194,7 +211,7 @@ export default function Appointments({ user, token, appointments, reloadAppointm
                                 return (
                                     <tr key={a.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                                         <td style={{ padding: '12px' }}>#{a.id}</td>
-                                        <td style={{ padding: '12px' }}>{nameCol}</td>
+                                        <td style={{ padding: '12px' }}>{highlightMatch(nameCol, globalSearchQuery)}</td>
                                         <td style={{ padding: '12px' }}>{a.appointmentDate}</td>
                                         <td style={{ padding: '12px' }}><strong>{a.timeSlot}</strong></td>
                                         <td style={{ padding: '12px' }}>
@@ -272,8 +289,8 @@ export default function Appointments({ user, token, appointments, reloadAppointm
                                     <div className="doc-card-header">
                                         <div className="doc-avatar"><i className="fa-solid fa-user-doctor"></i></div>
                                         <div className="doc-name">
-                                            <h3>Dr. {d.firstName} {d.lastName}</h3>
-                                            <span>{d.specialization}</span>
+                                            <h3>{highlightMatch(`Dr. ${d.firstName} ${d.lastName}`, searchQuery || globalSearchQuery)}</h3>
+                                            <span>{highlightMatch(d.specialization, searchQuery || globalSearchQuery)}</span>
                                         </div>
                                     </div>
                                     <div className="doc-contact-info">

@@ -400,7 +400,7 @@ export default function App() {
         });
     };
 
-    const createPeerConnection = () => {
+    const createPeerConnection = (customStream = null) => {
         const pc = new RTCPeerConnection({
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -422,9 +422,10 @@ export default function App() {
             }
         };
 
-        if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach(track => {
-                pc.addTrack(track, localStreamRef.current);
+        const activeStream = customStream || localStreamRef.current;
+        if (activeStream) {
+            activeStream.getTracks().forEach(track => {
+                pc.addTrack(track, activeStream);
             });
         }
 
@@ -455,13 +456,25 @@ export default function App() {
                     break;
 
                 case 'offer':
+                    if (!peerConnectionRef.current) {
+                        createPeerConnection();
+                    }
                     if (peerConnectionRef.current) {
-                        peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.sdp))
+                        const pc = peerConnectionRef.current;
+                        const stream = localStreamRef.current;
+                        if (stream && pc.getSenders().length === 0) {
+                            console.log("Dynamically binding local tracks inside offer handler...");
+                            stream.getTracks().forEach(track => {
+                                pc.addTrack(track, stream);
+                            });
+                        }
+                        
+                        pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
                         .then(() => {
-                            return peerConnectionRef.current.createAnswer();
+                            return pc.createAnswer();
                         })
                         .then(answer => {
-                            return peerConnectionRef.current.setLocalDescription(answer).then(() => answer);
+                            return pc.setLocalDescription(answer).then(() => answer);
                         })
                         .then(answer => {
                             sendRtcSignal('answer', { sdp: answer });
@@ -518,6 +531,7 @@ export default function App() {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
         .then(stream => {
             setLocalStream(stream);
+            localStreamRef.current = stream; // Instantly set ref
             setCallActive(true);
             
             // Dispatch notification
@@ -558,10 +572,11 @@ export default function App() {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
         .then(stream => {
             setLocalStream(stream);
+            localStreamRef.current = stream; // Instantly set ref
             setCallActive(true);
             
             // Generate peer connection immediately
-            createPeerConnection();
+            createPeerConnection(stream);
             
             // Dispatch join to websocket
             const payload = {
@@ -886,7 +901,7 @@ export default function App() {
                                 />
                             </div>
                             <div className="top-bar-actions">
-                                <div className="notification-bell" onClick={() => setShowNotifTray(!showNotifTray)} style={{ cursor: 'pointer' }}>
+                                <div className={`notification-bell ${sysNotifications.filter(n => !n.read).length > 0 ? 'has-unread' : ''}`} onClick={() => setShowNotifTray(!showNotifTray)} style={{ cursor: 'pointer' }}>
                                     <i className="fa-solid fa-bell"></i>
                                     {sysNotifications.filter(n => !n.read).length > 0 && (
                                         <span className="bell-badge">{sysNotifications.filter(n => !n.read).length}</span>
@@ -941,7 +956,7 @@ export default function App() {
                                 width: '100%'
                             }}
                         >
-                            <div className="page-enter" key={activeTab} style={{ width: '100%', height: activeTab === 'tab-chat' ? '100%' : 'auto', display: activeTab === 'tab-chat' ? 'flex' : 'block' }}>
+                            <div className="page-enter" key={activeTab} style={{ width: '100%', height: activeTab === 'tab-chat' ? '100%' : 'auto' }}>
                                 {activeTab === 'tab-dashboard' && <Dashboard user={user} onNavigate={setActiveTab} />}
                                 {activeTab === 'tab-appointments' && (
                                     <Appointments 

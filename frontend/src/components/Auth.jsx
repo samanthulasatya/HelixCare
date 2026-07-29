@@ -8,6 +8,7 @@ export default function Auth({ onAuthSuccess }) {
     const [isLogin, setIsLogin] = useState(true);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     
     // Registration fields
     const [role, setRole] = useState('PATIENT');
@@ -299,13 +300,37 @@ export default function Auth({ onAuthSuccess }) {
                         </div>
                         <div className="form-group">
                             <label>Password</label>
-                            <input 
-                                type="password" 
-                                required 
-                                value={password} 
-                                onChange={e => setPassword(e.target.value)}
-                                placeholder="••••••••" 
-                            />
+                            <div style={{ position: 'relative' }}>
+                                <input 
+                                    type={showPassword ? "text" : "password"} 
+                                    required 
+                                    value={password} 
+                                    onChange={e => setPassword(e.target.value)}
+                                    placeholder="••••••••" 
+                                    style={{ paddingRight: '40px', width: '100%' }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '12px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'var(--color-text-muted)',
+                                        cursor: 'pointer',
+                                        padding: 0,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                    title={showPassword ? "Hide password" : "Show password"}
+                                >
+                                    <i className={showPassword ? "fa-solid fa-eye-slash" : "fa-solid fa-eye"}></i>
+                                </button>
+                            </div>
                         </div>
                         <button type="submit" className="btn btn-primary btn-block" style={{ marginTop: '10px' }} disabled={loading}>
                             {loading ? (
@@ -353,7 +378,36 @@ export default function Auth({ onAuthSuccess }) {
                                 </div>
                                 <div className="form-group">
                                     <label>Password</label>
-                                    <input type="password" required value={password} onChange={e => setPassword(e.target.value)} />
+                                    <div style={{ position: 'relative' }}>
+                                        <input 
+                                            type={showPassword ? "text" : "password"} 
+                                            required 
+                                            value={password} 
+                                            onChange={e => setPassword(e.target.value)} 
+                                            style={{ paddingRight: '40px', width: '100%' }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            style={{
+                                                position: 'absolute',
+                                                right: '12px',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--color-text-muted)',
+                                                cursor: 'pointer',
+                                                padding: 0,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}
+                                            title={showPassword ? "Hide password" : "Show password"}
+                                        >
+                                            <i className={showPassword ? "fa-solid fa-eye-slash" : "fa-solid fa-eye"}></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="form-group">
                                     <label>First Name</label>

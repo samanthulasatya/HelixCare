@@ -28,10 +28,19 @@ We have successfully implemented the visual, calling, and chat enhancements for 
 * We perform live track replacement (`RTCRtpSender.replaceTrack`) on the WebRTC connection without renegotiating, replacing the camera stream with the screen feed dynamically.
 * **Mobile Autoplay Bypass**: We explicitly call `.play()` programmatically on both `localVideoRef` and `remoteVideoRef` elements when stream tracks arrive. This bypasses mobile Safari/Chrome strict autoplay blocks on non-muted streams, ensuring the video stream plays instantly when answered on mobile phones.
 
+### 🎥 WebRTC Signaling Track Alignment (Offerer/Answerer Visibility)
+* **The Calling Visibility Bug**: Previously, because React updates state variables asynchronously, `localStreamRef.current` was still `null` at the moment `createPeerConnection()` was invoked on the receiver's (doctor's) client. This caused the doctor's client to generate a WebRTC answer with **0 local audio/video tracks**, resulting in the doctor's feed being visible to the patient, but the patient's feed being completely invisible to the doctor.
+* **The Fix**:
+  1. I updated `createPeerConnection(customStream)` to accept an optional stream argument, instantly binding local tracks to the connection.
+  2. In `initializeLocalVideoAndJoinCall`, we set `localStreamRef.current = stream` immediately when the promise resolves and pass the stream directly to `createPeerConnection`.
+  3. Added a dynamic track-addition fallback under the `offer` signaling case block in `App.jsx` to dynamically attach local camera tracks if they weren't bound when the connection was initially configured. Both caller and receiver now have perfect mutual visibility!
+
 ### 💬 Premium Chat Room Overhaul & Keyboard Locking
 * Overhauled the **Virtual Chat Room** layout to take up the full viewport height (`height: calc(100vh - 130px)`), floating as a clean modern panel.
-* **Keyboard Lock**: We disabled parent-level scrolling and padding on the `.content-body` when the chat tab is active, forcing the chat container to stretch to 100% height.
-* Added `flex-shrink: 0` to the header and input rows and `min-height: 0` to the message log viewport. This keeps the message input bar firmly anchored at the bottom of the screen, so it never shifts or rolls off-screen when users are typing.
+* **The Keyboard/Input Squish Bug**: Previously, the `.page-enter` wrapper was set to `display: flex`, but because its default direction was row and it lacked a block-prop height resolver, the `<Chat />` window grew dynamically with message logs. This pushed the message input row off-screen where it was hidden by the wrapper's overflow setting.
+* **The Fix**:
+  1. I removed the `display: flex` override from `.page-enter` in `App.jsx`, allowing standard block height propagation from the parent `.content-body` height of `calc(100vh - 75px)` down to `<Chat />`.
+  2. Applied `flex-shrink: 0` to both the `.chat-header` and the message input `<form>` inside `Chat.jsx` to prevent the browser flex engine from squeezing them to 0px under any conditions. The input row remains perfectly locked and visible at the bottom of the screen!
 * Redesigned the sidebar session buttons with dedicated user avatars, bold names, and smooth active state transitions.
 * Modernized the chat input text box (iOS / Discord style) with deep rounded corners (`border-radius: 24px`), soft backgrounds, and glowing border focus transitions.
 * **Signaling Filter**: We filter out all messages starting with `__WEBRTC__:` when loading historical logs from the database, ensuring clean and professional text chat histories.
@@ -83,9 +92,18 @@ We have successfully implemented the visual, calling, and chat enhancements for 
 * Added active CSS selectors for `input[type="date"]::-webkit-calendar-picker-indicator` to automatically colorize calendar indicator buttons.
 * **Crisp Light Theme**: Re-styled light mode variables using high-contrast solid gray card backdrops (`#ffffff`), border lines (`#cbd5e1`), and legible typography (`#0f172a`), giving it the look of a premium modern telehealth dashboard.
 
-### 🔍 Unified Dashboard Global Search
+### 🔍 Unified Dashboard Global Search & Doctor Directory Filter
 * **Search Input Binding**: Wired up the static `.top-bar` input search box dynamically. Removed its `readOnly` restriction, binding it to a React state wrapper `searchQuery`.
 * **Real-time Filters**:
-  * **Appointments tab**: Filters the consultation session table dynamically by doctor name, patient name, specialization, or appointment ID.
+  * **Appointments tab**: Filters the scheduled consultation sessions table dynamically by doctor name, patient name, specialization, or appointment ID.
+  * **Doctor Directory**: Incorporates the global search term to dynamically query the database for doctors by name or specialization when booking a new appointment, letting users search for doctors globally!
   * **Chat tab**: Filters the active consultations sidebar links instantly.
   * **Document Vault tab**: Filters vault records and displays a customized "No matching files" layout helper if search yields zero results.
+
+### 🔒 Appointment Conflicts Locking & JSON Parse Fixes
+* **Booking Validation**: The backend `appointment-service` contains real-time validation checks checking database records for scheduling overlaps. If a patient tries to book a doctor at a time slot that is already booked, the backend throws an `AppointmentConflictException`.
+* **Frontend Error Parser**: I updated `Appointments.jsx` to parse JSON error payloads properly. If the backend returns a `409 Conflict` response, the frontend extracts the specific `.message` property (e.g. *"Doctor already has an appointment booked for date..."*) and displays it in a clean alert modal, rather than displaying raw JSON strings.
+
+### 👁️ Password Visibility Toggle (Show/Hide)
+* **Auth Forms Upgrade**: Added a state wrapper `showPassword` inside `Auth.jsx`.
+* **Eye Icon Button**: Integrated a glassmorphic-aligned absolute eye button (`fa-eye` / `fa-eye-slash`) inside the password fields of both the **Login** and **Registration** forms. Clicking it toggles the input field type between `password` and `text` instantly.
