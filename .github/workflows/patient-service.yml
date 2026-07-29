@@ -1,0 +1,36 @@
+name: Patient Service CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/patient-service/**'
+      - 'backend/common/**'
+      - 'backend/pom.xml'
+      - '.github/workflows/patient-service.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'backend/patient-service/**'
+      - 'backend/common/**'
+      - 'backend/pom.xml'
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Log in to Docker Hub
+      if: github.event_name != 'pull_request'
+      run: |
+        echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+    - name: Build and Push Docker Image
+      if: github.event_name != 'pull_request'
+      run: |
+        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/patient-service:latest -f backend/patient-service/Dockerfile backend
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/patient-service:latest
