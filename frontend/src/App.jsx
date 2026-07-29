@@ -10,11 +10,11 @@ import SoapInsurance from './components/SoapInsurance';
 import CallingOverlay from './components/CallingOverlay';
 
 const SERVICES = {
-    GATEWAY: 'http://localhost:8080',
-    PATIENT: 'http://localhost:8085',
-    DOCTOR: 'http://localhost:8086',
-    APPOINTMENT: 'http://localhost:8087',
-    BILLING: 'http://localhost:8088'
+    GATEWAY: 'http://16.16.208.91:8080',
+    PATIENT: 'http://16.16.208.91:8085',
+    DOCTOR: 'http://16.16.208.91:8086',
+    APPOINTMENT: 'http://16.16.208.91:8087',
+    BILLING: 'http://16.16.208.91:8088'
 };
 
 export default function App() {

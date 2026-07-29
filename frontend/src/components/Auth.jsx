@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 const SERVICES = {
-    GATEWAY: 'http://localhost:8080'
+    GATEWAY: 'http://16.16.208.91:8080'
 };
 
 export default function Auth({ onAuthSuccess }) {

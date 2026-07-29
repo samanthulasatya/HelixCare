@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
 const SERVICES = {
-    PATIENT: 'http://localhost:8085',
-    DOCTOR: 'http://localhost:8086',
-    APPOINTMENT: 'http://localhost:8087'
+    PATIENT: 'http://16.16.208.91:8085',
+    DOCTOR: 'http://16.16.208.91:8086',
+    APPOINTMENT: 'http://16.16.208.91:8087'
 };
 
 export default function Appointments({ user, token, appointments, reloadAppointments }) {

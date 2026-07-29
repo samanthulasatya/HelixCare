@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 const SERVICES = {
-    BILLING: 'http://localhost:8088'
+    BILLING: 'http://16.16.208.91:8088'
 };
 
 export default function SoapInsurance() {
