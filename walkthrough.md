@@ -28,18 +28,20 @@ We have successfully implemented the visual, calling, and chat enhancements for 
 * We perform live track replacement (`RTCRtpSender.replaceTrack`) on the WebRTC connection without renegotiating, replacing the camera stream with the screen feed dynamically.
 * **Mobile Autoplay Bypass**: We explicitly call `.play()` programmatically on both `localVideoRef` and `remoteVideoRef` elements when stream tracks arrive. This bypasses mobile Safari/Chrome strict autoplay blocks on non-muted streams, ensuring the video stream plays instantly when answered on mobile phones.
 
-### 💬 Premium Chat Room Overhaul & Layout Lock
+### 💬 Premium Chat Room Overhaul & Keyboard Locking
 * Overhauled the **Virtual Chat Room** layout to take up the full viewport height (`height: calc(100vh - 130px)`), floating as a clean modern panel.
-* **Layout Lock**: Added `flex-shrink: 0` to `.chat-header` and `.chat-input-row` and `min-height: 0` to `.chat-logs-viewport` to prevent long messages from expanding the flex items and pushing the input bar off-screen. Messages now scroll cleanly in the middle of the screen.
+* **Keyboard Lock**: We disabled parent-level scrolling and padding on the `.content-body` when the chat tab is active, forcing the chat container to stretch to 100% height.
+* Added `flex-shrink: 0` to the header and input rows and `min-height: 0` to the message log viewport. This keeps the message input bar firmly anchored at the bottom of the screen, so it never shifts or rolls off-screen when users are typing.
 * Redesigned the sidebar session buttons with dedicated user avatars, bold names, and smooth active state transitions.
 * Modernized the chat input text box (iOS / Discord style) with deep rounded corners (`border-radius: 24px`), soft backgrounds, and glowing border focus transitions.
 * **Signaling Filter**: We filter out all messages starting with `__WEBRTC__:` when loading historical logs from the database, ensuring clean and professional text chat histories.
 
-### 📎 Base64 Chat File Sharing
+### 📎 Base64 Chat File Sharing & Buffer Limits Fix
 * A clip attachment button (`fa-paperclip`) is mounted next to the chat text input field.
 * Clicking it opens a file selector. Files are limited to **1MB** to prevent database bloating.
 * Selected documents/images are converted to Base64 strings using a `FileReader` and broadcasted via Stomp WebSockets inside a structured token `[FILE:filename:mime]base64...`.
 * The message parser renders files beautifully: images show up inline with instant previews, and non-image files (like PDFs) display inside high-contrast download card boxes.
+* **WebSocket Size Limit Fix**: We overrode `configureWebSocketTransport` inside `WebSocketConfig.java` in the backend `gateway-service` to set `messageSizeLimit` and `sendBufferSizeLimit` to **5MB** (up from the Spring default of 64KB). This allows seamless transfer of large Base64 files without triggering session limit exceptions or socket terminations.
 
 ### 🛡️ SOAP Claims Verification & Card Payment checkout
 * Overhauled the **SOAP Insurance** tab to dynamically load the logged-in patient's outstanding database invoices (`/api/billing/invoices/patient/{id}`) on mount.
@@ -67,55 +69,23 @@ We have successfully implemented the visual, calling, and chat enhancements for 
 
 ### 🗄️ Clinical Document Vault & Live Consultation Files
 * **Document Vault screen**: Added a side-navigation menu tab: **"🗄️ Document Vault"**.
-* **Patient Mode**: Patients upload scan reports, X-rays, and lab reports using a Base64 file selector, classifying them under tags ("Lab Report", "X-Ray", "Prescription", "Insurance Claim") that persist in local storage.
+* **Patient Mode**: Patients upload scan reports, X-rays, and lab reports. File actions are sent to the REST backend and synchronized globally.
 * **Doctor Mode**: Doctors select a patient from the consult directory to instantly browse and download their shared files.
 * **🗂️ Patient Files Drawer Tab**: Added a third tab inside the doctor's consultation side-drawer in `Chat.jsx`. This tab queries the active patient's digital health vault files in real-time. Doctors can view, preview, and download patient reports immediately next to the chat logs during calls.
+* **Global Sync REST Endpoints**: Implemented thread-safe concurrent in-memory document storage maps in the backend `patient-service` via `/api/patients/{id}/documents`. The vault now synchronizes files **instantly across different computers, browsers, profiles, and incognito sessions**, with automatic local database fallbacks!
 
 ### 🔔 Bell Notification Center
 * **Header Bar**: Added a Top Navigation Bar containing a search bar and a bell icon with red unread counter badge.
 * **Sliding Tray drawer**: Clicking the bell toggles a sliding notification dropdown list, showing recent logs (like payment processing notifications, claim creations, or missed calls) with read/unread dismiss options.
 
----
+### 📅 Calendar Picker and Light Mode Upgrades
+* **Calendar Visibility**: Appended `color-scheme: dark` to `:root` variables and `color-scheme: light` to the theme selector. This informs browser layout engines to render date dropdown popups and calendars in the correct readable theme.
+* Added active CSS selectors for `input[type="date"]::-webkit-calendar-picker-indicator` to automatically colorize calendar indicator buttons.
+* **Crisp Light Theme**: Re-styled light mode variables using high-contrast solid gray card backdrops (`#ffffff`), border lines (`#cbd5e1`), and legible typography (`#0f172a`), giving it the look of a premium modern telehealth dashboard.
 
-## 3. Updated Task Checklist
-
-- [x] Theme Customizer Mappings
-  - [x] Define slate-dark and light theme variables in `index.css`
-  - [x] Add theme select dropdown in Sidebar (`App.jsx`)
-  - [x] Persist selected theme in `localStorage`
-- [x] CSS Keyframes & Page Transitions
-  - [x] Write smooth fade/slide transitions for tabs (`index.css`)
-  - [x] Write pulsing ambient backdrop glow for ringing call window
-  - [x] Apply `.page-enter` classes to components in `App.jsx`
-- [x] Incoming Call Ringing Tone
-  - [x] Embed loopable ringing sound object in `App.jsx`
-  - [x] Play sound during active incoming calls, stop when accepted/declined/timed out
-- [x] WebRTC Screen Sharing & Mobile Play
-  - [x] Implement `toggleScreenShare` in `App.jsx` via `getDisplayMedia`
-  - [x] Add Screen Share button in `CallingOverlay.jsx`
-  - [x] Explicitly trigger `.play()` on stream attachments in `CallingOverlay.jsx` to bypass mobile restrictions
-- [x] Chat File Attachments & Signal Filtering
-  - [x] Add file upload input and clip icon in `Chat.jsx`
-  - [x] Implement Base64 reader and websocket sender in `Chat.jsx`
-  - [x] Filter out WebRTC signaling packets from historical database logs in `App.jsx`
-- [x] SOAP Insurance Billing & Payments
-  - [x] Load outstanding patient invoices from database on mount
-  - [x] Map invoice claim amount automatically when selected
-  - [x] Integrate credit card checkout form inside the coverage receipt
-  - [x] Wire card payments processing to POST `/api/billing/pay` REST endpoint
-- [x] SOAP Notes Scribe & Claims Generator
-  - [x] Add POST /api/billing/invoice mapping in BillingController.java
-  - [x] Add SOAP Notes drawer UI inside Chat.jsx
-  - [x] Build local summary compiler & database invoice creator integration
-- [x] E-Prescription PDF Creator
-  - [x] Implement Write Rx form inside Scribe panel
-  - [x] Create [PRESCRIPTION:xxx] chat stream parser and layout cards
-  - [x] Add print/save prescription handlers using window.print() triggers
-- [x] Document Vault Repository
-  - [x] Add DocumentVault.jsx component with Base64 tags upload
-  - [x] Implement doctor lookup directories of patient files
-  - [x] Add Document Vault sidebar link in App.jsx
-- [x] Persistent Notification Center
-  - [x] Mount Top Navigation Bar with Bell icon and unread badge in App.jsx
-  - [x] Implement sliding tray drawer with read-actions
-  - [x] Hook notifications to trigger on missed calls, invoice creations, and card payments
+### 🔍 Unified Dashboard Global Search
+* **Search Input Binding**: Wired up the static `.top-bar` input search box dynamically. Removed its `readOnly` restriction, binding it to a React state wrapper `searchQuery`.
+* **Real-time Filters**:
+  * **Appointments tab**: Filters the consultation session table dynamically by doctor name, patient name, specialization, or appointment ID.
+  * **Chat tab**: Filters the active consultations sidebar links instantly.
+  * **Document Vault tab**: Filters vault records and displays a customized "No matching files" layout helper if search yields zero results.

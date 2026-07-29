@@ -45,4 +45,28 @@ public class PatientService {
         existing.setMedicalHistory(medicalHistory);
         return patientRepository.save(existing);
     }
+
+    // In-memory global Document Vault directory
+    private final java.util.Map<Long, java.util.List<java.util.Map<String, Object>>> documentStore = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public java.util.List<java.util.Map<String, Object>> getDocuments(Long patientId) {
+        return documentStore.getOrDefault(patientId, new java.util.ArrayList<>());
+    }
+
+    public void addDocument(Long patientId, java.util.Map<String, Object> document) {
+        documentStore.computeIfAbsent(patientId, k -> new java.util.concurrent.CopyOnWriteArrayList<>()).add(0, document);
+    }
+
+    public void deleteDocument(Long patientId, Long fileId) {
+        java.util.List<java.util.Map<String, Object>> docs = documentStore.get(patientId);
+        if (docs != null) {
+            docs.removeIf(doc -> {
+                Object idVal = doc.get("id");
+                if (idVal instanceof Number) {
+                    return ((Number) idVal).longValue() == fileId;
+                }
+                return false;
+            });
+        }
+    }
 }

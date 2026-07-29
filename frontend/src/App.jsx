@@ -35,6 +35,7 @@ export default function App() {
         }
     });
     const [showNotifTray, setShowNotifTray] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const addSysNotification = (messageText) => {
         try {
@@ -876,7 +877,13 @@ export default function App() {
                         <div className="top-bar">
                             <div className="search-bar-wrapper">
                                 <i className="fa-solid fa-magnifying-glass"></i>
-                                <input type="text" placeholder="Search consultations, reports..." readOnly />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search consultations, files, doctors..." 
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    style={{ background: 'transparent', border: 'none', color: 'var(--color-text)', outline: 'none', width: '100%', fontSize: '13px' }}
+                                />
                             </div>
                             <div className="top-bar-actions">
                                 <div className="notification-bell" onClick={() => setShowNotifTray(!showNotifTray)} style={{ cursor: 'pointer' }}>
@@ -927,14 +934,14 @@ export default function App() {
                         <div 
                             className="content-body" 
                             style={{ 
-                                padding: '40px', 
-                                overflowY: 'auto', 
+                                padding: activeTab === 'tab-chat' ? '0px' : '40px', 
+                                overflowY: activeTab === 'tab-chat' ? 'hidden' : 'auto', 
                                 flexGrow: 1, 
                                 height: 'calc(100vh - 75px)',
                                 width: '100%'
                             }}
                         >
-                            <div className="page-enter" key={activeTab} style={{ width: '100%' }}>
+                            <div className="page-enter" key={activeTab} style={{ width: '100%', height: activeTab === 'tab-chat' ? '100%' : 'auto', display: activeTab === 'tab-chat' ? 'flex' : 'block' }}>
                                 {activeTab === 'tab-dashboard' && <Dashboard user={user} onNavigate={setActiveTab} />}
                                 {activeTab === 'tab-appointments' && (
                                     <Appointments 
@@ -942,6 +949,7 @@ export default function App() {
                                         token={token} 
                                         appointments={appointments} 
                                         reloadAppointments={loadAppointments} 
+                                        searchQuery={searchQuery}
                                     />
                                 )}
                                 {activeTab === 'tab-chat' && (
@@ -955,6 +963,7 @@ export default function App() {
                                         onClearHistory={handleClearHistory}
                                         onStartCall={startVideoCall}
                                         onAddNotification={addSysNotification}
+                                        searchQuery={searchQuery}
                                     />
                                 )}
                                 {activeTab === 'tab-soap' && (
@@ -969,6 +978,7 @@ export default function App() {
                                         user={user} 
                                         token={token} 
                                         appointments={appointments} 
+                                        searchQuery={searchQuery}
                                     />
                                 )}
                             </div>

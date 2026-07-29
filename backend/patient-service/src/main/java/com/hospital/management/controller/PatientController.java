@@ -33,4 +33,21 @@ public class PatientController {
     public ResponseEntity<Patient> updateMedicalHistory(@PathVariable Long id, @RequestBody String medicalHistory) {
         return ResponseEntity.ok(patientService.updateMedicalHistory(id, medicalHistory));
     }
+
+    @GetMapping("/{id}/documents")
+    public ResponseEntity<?> getDocuments(@PathVariable Long id) {
+        return ResponseEntity.ok(patientService.getDocuments(id));
+    }
+
+    @PostMapping("/{id}/documents")
+    public ResponseEntity<?> addDocument(@PathVariable Long id, @RequestBody java.util.Map<String, Object> document) {
+        patientService.addDocument(id, document);
+        return ResponseEntity.ok("Document added successfully");
+    }
+
+    @DeleteMapping("/{id}/documents/{fileId}")
+    public ResponseEntity<?> deleteDocument(@PathVariable Long id, @PathVariable Long fileId) {
+        patientService.deleteDocument(id, fileId);
+        return ResponseEntity.ok("Document deleted successfully");
+    }
 }

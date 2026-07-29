@@ -6,7 +6,7 @@ const SERVICES = {
     APPOINTMENT: 'https://helixcare.duckdns.org'
 };
 
-export default function Appointments({ user, token, appointments, reloadAppointments }) {
+export default function Appointments({ user, token, appointments, reloadAppointments, searchQuery: globalSearchQuery }) {
     const [doctors, setDoctors] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [specFilter, setSpecFilter] = useState('');
@@ -147,6 +147,17 @@ export default function Appointments({ user, token, appointments, reloadAppointm
         })
         .catch(err => alert(err.message));
     };
+    const searchFilteredAppointments = (appointments || []).filter(a => {
+        if (!globalSearchQuery) return true;
+        const query = globalSearchQuery.toLowerCase();
+        const nameCol = user.role === 'PATIENT' ? 
+            `Dr. ${a.doctor.firstName} ${a.doctor.lastName}` : 
+            `${a.patient.firstName} ${a.patient.lastName}`;
+        const specialization = a.doctor.specialization || '';
+        return nameCol.toLowerCase().includes(query) || 
+               specialization.toLowerCase().includes(query) ||
+               String(a.id).includes(query);
+    });
 
     return (
         <section className="screen active">
@@ -168,14 +179,14 @@ export default function Appointments({ user, token, appointments, reloadAppointm
                         </tr>
                     </thead>
                     <tbody>
-                        {appointments.length === 0 ? (
+                        {searchFilteredAppointments.length === 0 ? (
                             <tr>
                                 <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-muted)' }}>
                                     No consultation sessions scheduled.
                                 </td>
                             </tr>
                         ) : (
-                            appointments.map(a => {
+                            searchFilteredAppointments.map(a => {
                                 const nameCol = user.role === 'PATIENT' ? 
                                     `Dr. ${a.doctor.firstName} ${a.doctor.lastName} (${a.doctor.specialization})` : 
                                     `${a.patient.firstName} ${a.patient.lastName}`;

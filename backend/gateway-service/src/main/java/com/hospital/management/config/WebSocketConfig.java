@@ -28,4 +28,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/chat")
                 .setAllowedOriginPatterns("*");
     }
+
+    @Override
+    public void configureWebSocketTransport(org.springframework.web.socket.config.annotation.WebSocketTransportRegistration registration) {
+        registration.setMessageSizeLimit(5 * 1024 * 1024); // 5MB message size limit
+        registration.setSendBufferSizeLimit(5 * 1024 * 1024); // 5MB send buffer limit
+        registration.setSendTimeLimit(20 * 1000); // 20 seconds send time limit
+    }
 }

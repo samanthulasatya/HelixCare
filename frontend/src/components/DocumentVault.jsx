@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function DocumentVault({ user, token, appointments }) {
+export default function DocumentVault({ user, token, appointments, searchQuery }) {
     const [vaultFiles, setVaultFiles] = useState([]);
     const [selectedPatientId, setSelectedPatientId] = useState('');
     const [uploadCategory, setUploadCategory] = useState('Lab Report');
@@ -23,15 +23,31 @@ export default function DocumentVault({ user, token, appointments }) {
 
     const patientList = getPatientList();
 
-    // Load files
+    // Load files from backend API with localStorage fallback
     const loadVaultData = () => {
         const targetId = user.role === 'PATIENT' ? user.patientId : selectedPatientId;
         if (!targetId) {
             setVaultFiles([]);
             return;
         }
-        const dataStr = localStorage.getItem(`helix_vault_${targetId}`) || '[]';
-        setVaultFiles(JSON.parse(dataStr));
+
+        fetch(`https://helixcare.duckdns.org/api/patients/${targetId}/documents`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Could not fetch documents");
+            return res.json();
+        })
+        .then(data => {
+            setVaultFiles(data);
+            // Sync locally
+            localStorage.setItem(`helix_vault_${targetId}`, JSON.stringify(data));
+        })
+        .catch(err => {
+            console.warn("REST vault error, falling back to local database:", err);
+            const dataStr = localStorage.getItem(`helix_vault_${targetId}`) || '[]';
+            setVaultFiles(JSON.parse(dataStr));
+        });
     };
 
     useEffect(() => {
@@ -62,9 +78,27 @@ export default function DocumentVault({ user, token, appointments }) {
             };
 
             const targetId = user.role === 'PATIENT' ? user.patientId : selectedPatientId;
-            const updated = [newFile, ...vaultFiles];
-            localStorage.setItem(`helix_vault_${targetId}`, JSON.stringify(updated));
-            setVaultFiles(updated);
+
+            // Push to backend
+            fetch(`https://helixcare.duckdns.org/api/patients/${targetId}/documents`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(newFile)
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Backend save failed");
+                loadVaultData();
+            })
+            .catch(err => {
+                console.warn("Upload REST save failed, writing local backup:", err);
+                const localStr = localStorage.getItem(`helix_vault_${targetId}`) || '[]';
+                const updated = [newFile, ...JSON.parse(localStr)];
+                localStorage.setItem(`helix_vault_${targetId}`, JSON.stringify(updated));
+                setVaultFiles(updated);
+            });
         };
         reader.readAsDataURL(file);
         e.target.value = '';
@@ -72,10 +106,31 @@ export default function DocumentVault({ user, token, appointments }) {
 
     const handleDeleteFile = (fileId) => {
         const targetId = user.role === 'PATIENT' ? user.patientId : selectedPatientId;
-        const filtered = vaultFiles.filter(f => f.id !== fileId);
-        localStorage.setItem(`helix_vault_${targetId}`, JSON.stringify(filtered));
-        setVaultFiles(filtered);
+
+        // Delete from backend
+        fetch(`https://helixcare.duckdns.org/api/patients/${targetId}/documents/${fileId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Backend delete failed");
+            loadVaultData();
+        })
+        .catch(err => {
+            console.warn("Delete REST call failed, writing local backup:", err);
+            const localStr = localStorage.getItem(`helix_vault_${targetId}`) || '[]';
+            const filtered = JSON.parse(localStr).filter(f => f.id !== fileId);
+            localStorage.setItem(`helix_vault_${targetId}`, JSON.stringify(filtered));
+            setVaultFiles(filtered);
+        });
     };
+
+    const filteredFiles = vaultFiles.filter(f => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        return f.name.toLowerCase().includes(query) || 
+               f.category.toLowerCase().includes(query);
+    });
 
     return (
         <section className="screen active">
@@ -177,9 +232,14 @@ export default function DocumentVault({ user, token, appointments }) {
                                 <i className="fa-solid fa-folder-minus" style={{ fontSize: '48px', marginBottom: '15px', opacity: 0.2 }}></i>
                                 <p style={{ fontSize: '13.5px' }}>No documents uploaded in this vault directory yet.</p>
                             </div>
+                        ) : filteredFiles.length === 0 ? (
+                            <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                                <i className="fa-solid fa-magnifying-glass" style={{ fontSize: '48px', marginBottom: '15px', opacity: 0.2 }}></i>
+                                <p style={{ fontSize: '13.5px' }}>No matching documents found for search query.</p>
+                            </div>
                         ) : (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '15px' }}>
-                                {vaultFiles.map(file => {
+                                {filteredFiles.map(file => {
                                     const isImg = file.type && file.type.startsWith('image/');
                                     return (
                                         <div 

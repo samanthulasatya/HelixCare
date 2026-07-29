@@ -13,7 +13,8 @@ export default function Chat({
     onSendMessage, 
     onClearHistory, 
     onStartCall,
-    onAddNotification
+    onAddNotification,
+    searchQuery
 }) {
     const [text, setText] = useState('');
     const fileInputRef = useRef(null);
@@ -34,6 +35,33 @@ export default function Chat({
     const [rxDosage, setRxDosage] = useState('');
     const [rxInstructions, setRxInstructions] = useState('');
     const [rxRefills, setRxRefills] = useState('No refills');
+
+    // Dynamic shared files state for doctor lookup
+    const [sharedFiles, setSharedFiles] = useState([]);
+
+    const loadSharedFiles = () => {
+        if (!selectedChatSession) return;
+        const patientId = selectedChatSession.patient.id;
+        fetch(`https://helixcare.duckdns.org/api/patients/${patientId}/documents`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('helix_token')}` }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Could not load documents");
+            return res.json();
+        })
+        .then(data => setSharedFiles(data))
+        .catch(err => {
+            console.warn("REST vault error, loading local data fallback:", err);
+            const local = localStorage.getItem(`helix_vault_${patientId}`) || '[]';
+            setSharedFiles(JSON.parse(local));
+        });
+    };
+
+    React.useEffect(() => {
+        if (drawerTab === 'files' && selectedChatSession) {
+            loadSharedFiles();
+        }
+    }, [drawerTab, selectedChatSession]);
 
     const handleSend = (e) => {
         e.preventDefault();
@@ -157,22 +185,33 @@ export default function Chat({
     };
 
     const activeList = appointments.filter(a => a.status !== 'CANCELLED');
+    const filteredList = activeList.filter(a => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        const name = user.role === 'PATIENT' ? 
+            `Dr. ${a.doctor.firstName} ${a.doctor.lastName}` : 
+            `${a.patient.firstName} ${a.patient.lastName}`;
+        const specialization = a.doctor.specialization || '';
+        return name.toLowerCase().includes(query) || 
+               specialization.toLowerCase().includes(query) ||
+               String(a.id).includes(query);
+    });
 
     return (
-        <section className="screen active" style={{ padding: 0 }}>
-            <div className="chat-container">
+        <section className="screen active" style={{ padding: 0, height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div className="chat-container" style={{ height: '100%', borderRadius: 0, border: 'none', width: '100%' }}>
                 {/* Sidebar */}
                 <div className="chat-sidebar">
                     <h3 style={{ fontSize: '15px', fontWeight: 700, padding: '15px 20px', borderBottom: '1px solid var(--border-color)', margin: 0 }}>
                         Active Consultations
                     </h3>
                     <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flexGrow: 1 }}>
-                        {activeList.length === 0 ? (
+                        {filteredList.length === 0 ? (
                             <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', textAlign: 'center', marginTop: '20px' }}>
-                                No active consultation links.
+                                No matching consultation links.
                             </p>
                         ) : (
-                            activeList.map(a => {
+                            filteredList.map(a => {
                                 const name = user.role === 'PATIENT' ? 
                                     `Dr. ${a.doctor.firstName} ${a.doctor.lastName}` : 
                                     `${a.patient.firstName} ${a.patient.lastName}`;
@@ -679,9 +718,7 @@ export default function Chat({
                                     <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: 0 }} />
                                     
                                     {(() => {
-                                        const patientId = selectedChatSession.patient.id;
-                                        const dataStr = localStorage.getItem(`helix_vault_${patientId}`) || '[]';
-                                        const files = JSON.parse(dataStr);
+                                        const files = sharedFiles;
 
                                         if (files.length === 0) {
                                             return (

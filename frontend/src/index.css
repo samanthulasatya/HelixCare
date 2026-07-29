@@ -21,6 +21,7 @@
     --font-secondary: 'Plus Jakarta Sans', sans-serif;
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color-scheme: dark;
 }
 
 * {
@@ -1456,15 +1457,16 @@ body {
 
 /* 2. Light theme */
 .theme-light {
-    --bg-dark: #f8fafc;
-    --bg-surface: rgba(15, 23, 42, 0.04);
-    --bg-surface-hover: rgba(15, 23, 42, 0.08);
-    --border-color: rgba(15, 23, 42, 0.1);
+    --bg-dark: #f1f5f9;
+    --bg-surface: #ffffff;
+    --bg-surface-hover: #f8fafc;
+    --border-color: #cbd5e1;
     --color-text: #0f172a;
-    --color-text-muted: #64748b;
-    --color-primary: #3b82f6;
-    --color-primary-light: #2563eb;
+    --color-text-muted: #475569;
+    --color-primary: #2563eb;
+    --color-primary-light: #1d4ed8;
     --color-primary-glow: rgba(37, 99, 235, 0.15);
+    color-scheme: light;
 }
 
 /* Light mode call-duration contrast fix */
@@ -1479,14 +1481,19 @@ body {
 .theme-light .sidebar, 
 .theme-light .modal,
 .theme-light .user-badge {
-    background: rgba(255, 255, 255, 0.7) !important;
-    border: 1px solid rgba(15, 23, 42, 0.08) !important;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.04) !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+}
+
+.theme-light .top-bar {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
 }
 
 .theme-light .sidebar nav button.active, 
 .theme-light .sidebar nav button:hover {
-    background: rgba(37, 99, 235, 0.08) !important;
+    background: #f1f5f9 !important;
 }
 
 .theme-light .message-bubble.sent {
@@ -1499,20 +1506,68 @@ body {
 }
 
 .theme-light .chat-input-area {
-    background: rgba(255, 255, 255, 0.9) !important;
+    background: #ffffff !important;
+}
+
+.theme-light .chat-container {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+.theme-light .chat-sidebar {
+    background: #f8fafc !important;
+    border-right: 1px solid #e2e8f0 !important;
+}
+
+.theme-light .chat-input-row {
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+.theme-light .chat-input-row input[type="text"] {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+.theme-light .chat-drawer {
+    background: #f8fafc !important;
+    border-left: 1px solid #e2e8f0 !important;
+}
+
+.theme-light .chat-drawer textarea, 
+.theme-light .chat-drawer input {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
 }
 
 .theme-light .form-group input, 
 .theme-light .form-group select, 
 .theme-light .form-group textarea {
-    background: rgba(15, 23, 42, 0.02) !important;
+    background: #ffffff !important;
     color: #0f172a !important;
-    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    border: 1px solid #cbd5e1 !important;
 }
 
 .theme-light .form-group select option {
     background-color: #ffffff !important;
     color: #0f172a !important;
+}
+
+/* Color indicators for calendar date pickers */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+    opacity: 0.75;
+    transition: var(--transition-smooth);
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+.theme-light input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0);
 }
 
 /* Smooth Tab Transitions */
