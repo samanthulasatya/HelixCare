@@ -85,6 +85,16 @@ services:
     networks:
       - helixcare-network
 
+  frontend:
+    image: ${DOCKERHUB_USERNAME:-satyasamanthula}/frontend:latest
+    container_name: frontend-client
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway-service
+    networks:
+      - helixcare-network
+
 volumes:
   mysql-data:
 
