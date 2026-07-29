@@ -25,7 +25,7 @@ export default function DocumentVault({ user, token, appointments }) {
 
     // Load files
     const loadVaultData = () => {
-        const targetId = user.role === 'PATIENT' ? user.id : selectedPatientId;
+        const targetId = user.role === 'PATIENT' ? user.patientId : selectedPatientId;
         if (!targetId) {
             setVaultFiles([]);
             return;
@@ -61,7 +61,7 @@ export default function DocumentVault({ user, token, appointments }) {
                 timestamp: new Date().toLocaleString()
             };
 
-            const targetId = user.role === 'PATIENT' ? user.id : selectedPatientId;
+            const targetId = user.role === 'PATIENT' ? user.patientId : selectedPatientId;
             const updated = [newFile, ...vaultFiles];
             localStorage.setItem(`helix_vault_${targetId}`, JSON.stringify(updated));
             setVaultFiles(updated);
@@ -71,7 +71,7 @@ export default function DocumentVault({ user, token, appointments }) {
     };
 
     const handleDeleteFile = (fileId) => {
-        const targetId = user.role === 'PATIENT' ? user.id : selectedPatientId;
+        const targetId = user.role === 'PATIENT' ? user.patientId : selectedPatientId;
         const filtered = vaultFiles.filter(f => f.id !== fileId);
         localStorage.setItem(`helix_vault_${targetId}`, JSON.stringify(filtered));
         setVaultFiles(filtered);

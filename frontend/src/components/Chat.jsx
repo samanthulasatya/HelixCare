@@ -277,9 +277,12 @@ export default function Chat({
 
                                         if (isPrescription) {
                                             try {
-                                                const closeTagIndex = m.content.indexOf(']');
-                                                if (closeTagIndex > 14) {
-                                                    const jsonStr = m.content.substring(14, closeTagIndex);
+                                                const firstBrace = m.content.indexOf('{');
+                                                const lastBrace = m.content.lastIndexOf('}');
+                                                if (firstBrace !== -1 && lastBrace !== -1) {
+                                                    let jsonStr = m.content.substring(firstBrace, lastBrace + 1);
+                                                    // Handle database/websocket double escaping
+                                                    jsonStr = jsonStr.replace(/\\"/g, '"');
                                                     rxData = JSON.parse(jsonStr);
                                                 }
                                             } catch (e) {
@@ -507,22 +510,29 @@ export default function Chat({
                                 <button 
                                     className={`btn ${drawerTab === 'notes' ? 'btn-primary' : 'btn-secondary'}`}
                                     onClick={() => setDrawerTab('notes')}
-                                    style={{ flex: 1, padding: '8px', fontSize: '12px' }}
+                                    style={{ flex: 1, padding: '8px', fontSize: '11px' }}
                                 >
-                                    📝 SOAP Scribe
+                                    📝 SOAP Note
                                 </button>
                                 <button 
                                     className={`btn ${drawerTab === 'rx' ? 'btn-primary' : 'btn-secondary'}`}
                                     onClick={() => setDrawerTab('rx')}
-                                    style={{ flex: 1, padding: '8px', fontSize: '12px' }}
+                                    style={{ flex: 1, padding: '8px', fontSize: '11px' }}
                                 >
                                     💊 Write Rx
+                                </button>
+                                <button 
+                                    className={`btn ${drawerTab === 'files' ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => setDrawerTab('files')}
+                                    style={{ flex: 1, padding: '8px', fontSize: '11px' }}
+                                >
+                                    🗂️ Patient Files
                                 </button>
                             </div>
 
                             <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: 0 }} />
 
-                            {drawerTab === 'notes' ? (
+                            {drawerTab === 'notes' && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700 }}>Clinical SOAP Charting</h4>
@@ -599,7 +609,9 @@ export default function Chat({
                                         </button>
                                     </form>
                                 </div>
-                            ) : (
+                            )}
+
+                            {drawerTab === 'rx' && (
                                 <form onSubmit={handleSendPrescription} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700 }}>Write Rx Prescription</h4>
                                     
@@ -656,6 +668,93 @@ export default function Chat({
                                         Send Rx to Patient Chat
                                     </button>
                                 </form>
+                            )}
+
+                            {drawerTab === 'files' && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700 }}>Patient Shared Files</h4>
+                                    <p style={{ fontSize: '11.5px', color: 'var(--color-text-muted)', margin: 0 }}>
+                                        Documents uploaded by this patient inside their Digital Vault.
+                                    </p>
+                                    <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: 0 }} />
+                                    
+                                    {(() => {
+                                        const patientId = selectedChatSession.patient.id;
+                                        const dataStr = localStorage.getItem(`helix_vault_${patientId}`) || '[]';
+                                        const files = JSON.parse(dataStr);
+
+                                        if (files.length === 0) {
+                                            return (
+                                                <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--color-text-muted)' }}>
+                                                    <i className="fa-solid fa-folder-open" style={{ fontSize: '32px', opacity: 0.2, marginBottom: '8px' }}></i>
+                                                    <div style={{ fontSize: '12px' }}>No documents uploaded by this patient.</div>
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                {files.map(file => {
+                                                    const isImg = file.type && file.type.startsWith('image/');
+                                                    return (
+                                                        <div 
+                                                            key={file.id} 
+                                                            style={{ 
+                                                                padding: '10px', 
+                                                                border: '1px solid var(--border-color)', 
+                                                                borderRadius: '8px', 
+                                                                background: 'rgba(255,255,255,0.01)',
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                gap: '6px'
+                                                            }}
+                                                        >
+                                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                                {file.category === 'Prescription' ? (
+                                                                    <i className="fa-solid fa-prescription-bottle-medical" style={{ fontSize: '18px', color: '#10b981' }}></i>
+                                                                ) : file.category === 'X-Ray / Scan' ? (
+                                                                    <i className="fa-solid fa-x-ray" style={{ fontSize: '18px', color: '#3b82f6' }}></i>
+                                                                ) : file.category === 'Lab Report' ? (
+                                                                    <i className="fa-solid fa-droplet" style={{ fontSize: '18px', color: '#ef4444' }}></i>
+                                                                ) : (
+                                                                    <i className="fa-solid fa-file-medical" style={{ fontSize: '18px', color: '#a78bfa' }}></i>
+                                                                )}
+                                                                <div style={{ minWidth: 0, flexGrow: 1 }}>
+                                                                    <div style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 700 }}>
+                                                                        {file.category}
+                                                                    </div>
+                                                                    <div style={{ fontSize: '11px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={file.name}>
+                                                                        {file.name}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {isImg && (
+                                                                <img 
+                                                                    src={file.dataUrl} 
+                                                                    alt={file.name} 
+                                                                    style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-color)' }} 
+                                                                />
+                                                            )}
+
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                                                                <span style={{ fontSize: '9px', color: 'var(--color-text-muted)' }}>{file.timestamp}</span>
+                                                                <a 
+                                                                    href={file.dataUrl} 
+                                                                    download={file.name} 
+                                                                    className="btn btn-secondary" 
+                                                                    style={{ padding: '4px 8px', fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}
+                                                                >
+                                                                    <i className="fa-solid fa-download"></i> Get
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
                             )}
                         </div>
                     )}

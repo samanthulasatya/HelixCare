@@ -29,7 +29,7 @@ export default function SoapInsurance({ user, token }) {
     const loadInvoices = () => {
         if (!user) return;
         const url = user.role === 'PATIENT' ? 
-            `${SERVICES.BILLING}/api/billing/invoices/patient/${user.id}` :
+            `${SERVICES.BILLING}/api/billing/invoices/patient/${user.patientId}` :
             `${SERVICES.BILLING}/api/billing/invoices`;
 
         fetch(url, {
