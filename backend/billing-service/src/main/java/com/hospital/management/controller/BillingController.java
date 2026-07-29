@@ -38,6 +38,28 @@ public class BillingController {
         ));
     }
 
+    @PostMapping("/invoice")
+    public ResponseEntity<Invoice> createInvoice(@RequestBody InvoiceRequest request) {
+        return ResponseEntity.ok(billingService.createInvoice(
+                request.getAppointmentId(),
+                request.getPatientId(),
+                request.getAmount()
+        ));
+    }
+
+    public static class InvoiceRequest {
+        private Long appointmentId;
+        private Long patientId;
+        private Double amount;
+
+        public Long getAppointmentId() { return appointmentId; }
+        public void setAppointmentId(Long appointmentId) { this.appointmentId = appointmentId; }
+        public Long getPatientId() { return patientId; }
+        public void setPatientId(Long patientId) { this.patientId = patientId; }
+        public Double getAmount() { return amount; }
+        public void setAmount(Double amount) { this.amount = amount; }
+    }
+
     public static class PayRequest {
         private Long invoiceId;
         private String cardNumber;

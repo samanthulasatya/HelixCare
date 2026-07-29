@@ -8,6 +8,7 @@ import Appointments from './components/Appointments';
 import Chat from './components/Chat';
 import SoapInsurance from './components/SoapInsurance';
 import CallingOverlay from './components/CallingOverlay';
+import DocumentVault from './components/DocumentVault';
 
 const SERVICES = {
     GATEWAY: 'https://helixcare.duckdns.org',
@@ -24,6 +25,37 @@ export default function App() {
 
     const [appointments, setAppointments] = useState([]);
     const [notifications, setNotifications] = useState([]);
+    const [sysNotifications, setSysNotifications] = useState(() => {
+        try {
+            const rawUser = localStorage.getItem('helix_user');
+            const uid = rawUser ? JSON.parse(rawUser).id : 'anon';
+            return JSON.parse(localStorage.getItem(`helix_sys_notif_${uid}`) || '[]');
+        } catch (e) {
+            return [];
+        }
+    });
+    const [showNotifTray, setShowNotifTray] = useState(false);
+
+    const addSysNotification = (messageText) => {
+        try {
+            const rawUser = localStorage.getItem('helix_user');
+            const uid = rawUser ? JSON.parse(rawUser).id : 'anon';
+            const newNotif = {
+                id: Date.now(),
+                text: messageText,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " - " + new Date().toLocaleDateString(),
+                read: false
+            };
+            setSysNotifications(prev => {
+                const updated = [newNotif, ...prev];
+                localStorage.setItem(`helix_sys_notif_${uid}`, JSON.stringify(updated));
+                return updated;
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const [selectedChatSession, setSelectedChatSession] = useState(null);
     const [chatMessages, setChatMessages] = useState([]);
 
@@ -214,6 +246,7 @@ export default function App() {
             }
         } else if (notif.type === 'VIDEO_CALL_DECLINE') {
             stopRingtone();
+            addSysNotification(notif.message);
             alert(notif.message);
             hangUpCall(false);
         } else if (notif.type === 'VIDEO_CALL_CANCEL') {
@@ -222,6 +255,7 @@ export default function App() {
             setIncomingCallAppointmentId(null);
             setIncomingCallSender(null);
             if (wasIncoming) {
+                addSysNotification(`Missed video call from ${notif.sender || 'Unknown Provider'}`);
                 const missedCalls = JSON.parse(localStorage.getItem('missed_calls') || '[]');
                 missedCalls.push({
                     sender: notif.sender || 'Unknown Provider',
@@ -234,6 +268,7 @@ export default function App() {
             alert("Incoming call cancelled by caller.");
         } else {
             setNotifications(prev => [notif, ...prev]);
+            addSysNotification(notif.message);
             alert(notif.message);
         }
     };
@@ -267,7 +302,8 @@ export default function App() {
         })
         .then(res => res.json())
         .then(data => {
-            const formatted = data.map(m => {
+            const filtered = data.filter(m => m.content && !m.content.startsWith('__WEBRTC__:'));
+            const formatted = filtered.map(m => {
                 let timeStr = m.timestamp;
                 try {
                     timeStr = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -775,6 +811,12 @@ export default function App() {
                         >
                             <span style={{ marginRight: '12px', fontSize: '16px' }}>🛡️</span> SOAP Insurance
                         </a>
+                        <a 
+                            className={`nav-item ${activeTab === 'tab-vault' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('tab-vault')}
+                        >
+                            <span style={{ marginRight: '12px', fontSize: '16px' }}>🗄️</span> Document Vault
+                        </a>
                     </nav>
 
                     <div className="sidebar-footer">
@@ -789,7 +831,6 @@ export default function App() {
                             >
                                 <option value="theme-slate-dark">Slate Dark</option>
                                 <option value="theme-light">Helix Light</option>
-                                <option value="theme-cyberpunk">Neon Cyberpunk</option>
                             </select>
                         </div>
                         <button 
@@ -803,7 +844,7 @@ export default function App() {
                             }}
                             style={{ position: 'relative', zIndex: 9999, pointerEvents: 'auto', cursor: 'pointer' }}
                         >
-                            <span style={{ marginRight: '10px', fontSize: '16px' }}>🚪</span> Logout
+                            Logout
                         </button>
                     </div>
                 </div>
@@ -813,8 +854,8 @@ export default function App() {
             <main 
                 className="main-content" 
                 style={token ? { 
-                    padding: '40px', 
-                    overflowY: 'auto' 
+                    height: '100vh',
+                    overflow: 'hidden'
                 } : { 
                     padding: '0px', 
                     width: '100%',
@@ -830,30 +871,109 @@ export default function App() {
                 {!token ? (
                     <Auth onAuthSuccess={handleAuthSuccess} />
                 ) : (
-                    <div className="page-enter" key={activeTab} style={{ width: '100%' }}>
-                        {activeTab === 'tab-dashboard' && <Dashboard user={user} onNavigate={setActiveTab} />}
-                        {activeTab === 'tab-appointments' && (
-                            <Appointments 
-                                user={user} 
-                                token={token} 
-                                appointments={appointments} 
-                                reloadAppointments={loadAppointments} 
-                            />
+                    <>
+                        {/* Top bar header with persistent Bell Notification triggers */}
+                        <div className="top-bar">
+                            <div className="search-bar-wrapper">
+                                <i className="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" placeholder="Search consultations, reports..." readOnly />
+                            </div>
+                            <div className="top-bar-actions">
+                                <div className="notification-bell" onClick={() => setShowNotifTray(!showNotifTray)} style={{ cursor: 'pointer' }}>
+                                    <i className="fa-solid fa-bell"></i>
+                                    {sysNotifications.filter(n => !n.read).length > 0 && (
+                                        <span className="bell-badge">{sysNotifications.filter(n => !n.read).length}</span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sliding glassmorphic system notification tray drawer */}
+                        {showNotifTray && (
+                            <div className="notif-tray-card">
+                                <div className="notif-header">
+                                    <h4>System Alerts</h4>
+                                    <button 
+                                        className="btn btn-secondary" 
+                                        onClick={() => {
+                                            const updated = sysNotifications.map(n => ({ ...n, read: true }));
+                                            const uid = user ? user.id : 'anon';
+                                            localStorage.setItem(`helix_sys_notif_${uid}`, JSON.stringify(updated));
+                                            setSysNotifications(updated);
+                                        }}
+                                        style={{ fontSize: '11px', padding: '4px 8px', cursor: 'pointer' }}
+                                    >
+                                        Mark read
+                                    </button>
+                                </div>
+                                <div className="notif-list">
+                                    {sysNotifications.length === 0 ? (
+                                        <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', textAlign: 'center', margin: '15px 0' }}>
+                                            No recent notifications.
+                                        </p>
+                                    ) : (
+                                        sysNotifications.map(n => (
+                                            <div key={n.id} className={`notif-item ${!n.read ? 'unread' : ''}`}>
+                                                <span>{n.text}</span>
+                                                <span className="time">{n.timestamp}</span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
                         )}
-                        {activeTab === 'tab-chat' && (
-                            <Chat 
-                                user={user} 
-                                appointments={appointments} 
-                                selectedChatSession={selectedChatSession}
-                                onSelectSession={handleSelectChatSession}
-                                chatMessages={chatMessages}
-                                onSendMessage={sendChatMessage}
-                                onClearHistory={handleClearHistory}
-                                onStartCall={startVideoCall}
-                            />
-                        )}
-                        {activeTab === 'tab-soap' && <SoapInsurance />}
-                    </div>
+
+                        {/* Content View viewport */}
+                        <div 
+                            className="content-body" 
+                            style={{ 
+                                padding: '40px', 
+                                overflowY: 'auto', 
+                                flexGrow: 1, 
+                                height: 'calc(100vh - 75px)',
+                                width: '100%'
+                            }}
+                        >
+                            <div className="page-enter" key={activeTab} style={{ width: '100%' }}>
+                                {activeTab === 'tab-dashboard' && <Dashboard user={user} onNavigate={setActiveTab} />}
+                                {activeTab === 'tab-appointments' && (
+                                    <Appointments 
+                                        user={user} 
+                                        token={token} 
+                                        appointments={appointments} 
+                                        reloadAppointments={loadAppointments} 
+                                    />
+                                )}
+                                {activeTab === 'tab-chat' && (
+                                    <Chat 
+                                        user={user} 
+                                        appointments={appointments} 
+                                        selectedChatSession={selectedChatSession}
+                                        onSelectSession={handleSelectChatSession}
+                                        chatMessages={chatMessages}
+                                        onSendMessage={sendChatMessage}
+                                        onClearHistory={handleClearHistory}
+                                        onStartCall={startVideoCall}
+                                        onAddNotification={addSysNotification}
+                                    />
+                                )}
+                                {activeTab === 'tab-soap' && (
+                                    <SoapInsurance 
+                                        user={user} 
+                                        token={token} 
+                                        onAddNotification={addSysNotification} 
+                                    />
+                                )}
+                                {activeTab === 'tab-vault' && (
+                                    <DocumentVault 
+                                        user={user} 
+                                        token={token} 
+                                        appointments={appointments} 
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    </>
                 )}
             </main>
 

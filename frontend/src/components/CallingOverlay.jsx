@@ -24,12 +24,18 @@ export default function CallingOverlay({
     useEffect(() => {
         if (localVideoRef.current) {
             localVideoRef.current.srcObject = localStream;
+            if (localStream) {
+                localVideoRef.current.play().catch(e => console.log("Local video play deferred: ", e));
+            }
         }
     }, [localStream, callActive]);
 
     useEffect(() => {
         if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = remoteStream;
+            if (remoteStream) {
+                remoteVideoRef.current.play().catch(e => console.log("Remote video play deferred: ", e));
+            }
         }
     }, [remoteStream, callActive]);
 
