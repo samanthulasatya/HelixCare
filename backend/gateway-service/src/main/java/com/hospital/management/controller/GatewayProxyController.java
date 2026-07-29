@@ -21,7 +21,9 @@ public class GatewayProxyController {
         "/api/patients/**",
         "/api/doctors/**",
         "/api/appointments/**",
-        "/api/billing/**"
+        "/api/billing/**",
+        "/ws/**",
+        "/ws"
     }, method = {
         RequestMethod.GET, 
         RequestMethod.POST, 
@@ -45,7 +47,7 @@ public class GatewayProxyController {
             targetBaseUrl = DOCTOR_SERVICE_URL;
         } else if (path.startsWith("/api/appointments")) {
             targetBaseUrl = APPOINTMENT_SERVICE_URL;
-        } else if (path.startsWith("/api/billing")) {
+        } else if (path.startsWith("/api/billing") || path.startsWith("/ws")) {
             targetBaseUrl = BILLING_SERVICE_URL;
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Path not routed");

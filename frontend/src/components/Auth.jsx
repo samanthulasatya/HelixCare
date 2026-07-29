@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 const SERVICES = {
-    GATEWAY: 'http://16.16.208.91:8080'
+    GATEWAY: 'https://helixcare.duckdns.org'
 };
 
 export default function Auth({ onAuthSuccess }) {

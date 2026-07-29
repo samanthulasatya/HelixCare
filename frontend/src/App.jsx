@@ -10,11 +10,11 @@ import SoapInsurance from './components/SoapInsurance';
 import CallingOverlay from './components/CallingOverlay';
 
 const SERVICES = {
-    GATEWAY: 'http://16.16.208.91:8080',
-    PATIENT: 'http://16.16.208.91:8080',
-    DOCTOR: 'http://16.16.208.91:8080',
-    APPOINTMENT: 'http://16.16.208.91:8080',
-    BILLING: 'http://16.16.208.91:8080'
+    GATEWAY: 'https://helixcare.duckdns.org',
+    PATIENT: 'https://helixcare.duckdns.org',
+    DOCTOR: 'https://helixcare.duckdns.org',
+    APPOINTMENT: 'https://helixcare.duckdns.org',
+    BILLING: 'https://helixcare.duckdns.org'
 };
 
 export default function App() {

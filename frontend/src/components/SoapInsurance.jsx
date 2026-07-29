@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 const SERVICES = {
-    BILLING: 'http://16.16.208.91:8080'
+    BILLING: 'https://helixcare.duckdns.org'
 };
 
 export default function SoapInsurance() {
