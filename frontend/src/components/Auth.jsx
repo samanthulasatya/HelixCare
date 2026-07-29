@@ -260,20 +260,6 @@ export default function Auth({ onAuthSuccess }) {
                                 onChange={e => setOtpCode(e.target.value)}
                                 style={{ textAlign: 'center', fontSize: '18px', letterSpacing: '8px', fontWeight: 700 }}
                             />
-                            {devOtpHint && (
-                                <div style={{ 
-                                    marginTop: '15px', 
-                                    padding: '10px 15px', 
-                                    background: 'rgba(96, 165, 250, 0.1)', 
-                                    border: '1px dashed rgba(96, 165, 250, 0.3)', 
-                                    borderRadius: '8px',
-                                    fontSize: '12px',
-                                    color: 'var(--color-text-muted)'
-                                }}>
-                                    <i className="fa-solid fa-info-circle" style={{ color: '#60a5fa', marginRight: '6px' }}></i>
-                                    Testing Hint: Use OTP code <strong style={{ color: 'var(--color-primary-light)' }}>{devOtpHint}</strong>
-                                </div>
-                            )}
                         </div>
                         <button type="submit" className="btn btn-primary btn-block" style={{ marginTop: '10px' }} disabled={loading}>
                             {loading ? (
@@ -343,20 +329,6 @@ export default function Auth({ onAuthSuccess }) {
                                     onChange={e => setRegOtpCode(e.target.value)}
                                     style={{ textAlign: 'center', fontSize: '18px', letterSpacing: '8px', fontWeight: 700 }}
                                 />
-                                {regOtpHint && (
-                                    <div style={{ 
-                                        marginTop: '15px', 
-                                        padding: '10px 15px', 
-                                        background: 'rgba(96, 165, 250, 0.1)', 
-                                        border: '1px dashed rgba(96, 165, 250, 0.3)', 
-                                        borderRadius: '8px',
-                                        fontSize: '12px',
-                                        color: 'var(--color-text-muted)'
-                                    }}>
-                                        <i className="fa-solid fa-info-circle" style={{ color: '#60a5fa', marginRight: '6px' }}></i>
-                                        Testing Hint: Use OTP code <strong style={{ color: 'var(--color-primary-light)' }}>{regOtpHint}</strong>
-                                    </div>
-                                )}
                                 <div style={{ marginTop: '15px', fontSize: '12.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <a href="#" style={{ color: 'var(--color-text-muted)' }} onClick={(e) => { e.preventDefault(); setRegOtpRequired(false); setRegOtpCode(''); }}>
                                         Back to details edit
