@@ -19,6 +19,7 @@ export default function Auth({ onAuthSuccess }) {
     const [gender, setGender] = useState('Male');
     const [medHistory, setMedHistory] = useState('');
     const [specialization, setSpecialization] = useState('Cardiology');
+    const [customSpecialization, setCustomSpecialization] = useState('');
 
     // OTP 2FA States
     const [otpRequired, setOtpRequired] = useState(false);
@@ -151,7 +152,7 @@ export default function Auth({ onAuthSuccess }) {
                 dateOfBirth: role === 'PATIENT' ? dob : null,
                 gender: role === 'PATIENT' ? gender : null,
                 medicalHistory: role === 'PATIENT' ? medHistory : null,
-                specialization: role === 'DOCTOR' ? specialization : null,
+                specialization: role === 'DOCTOR' ? (specialization === 'Others' ? customSpecialization : specialization) : null,
                 otp: regOtpCode
             };
 
@@ -403,15 +404,30 @@ export default function Auth({ onAuthSuccess }) {
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="form-group">
-                                        <label>Medical Specialization</label>
-                                        <select value={specialization} onChange={e => setSpecialization(e.target.value)}>
-                                            <option value="Cardiology">Cardiology</option>
-                                            <option value="General Medicine">General Medicine</option>
-                                            <option value="Pediatrics">Pediatrics</option>
-                                            <option value="Neurology">Neurology</option>
-                                        </select>
-                                    </div>
+                                    <>
+                                        <div className="form-group">
+                                            <label>Medical Specialization</label>
+                                            <select value={specialization} onChange={e => setSpecialization(e.target.value)}>
+                                                <option value="Cardiology">Cardiology</option>
+                                                <option value="General Medicine">General Medicine</option>
+                                                <option value="Pediatrics">Pediatrics</option>
+                                                <option value="Neurology">Neurology</option>
+                                                <option value="Others">Others</option>
+                                            </select>
+                                        </div>
+                                        {specialization === 'Others' && (
+                                            <div className="form-group">
+                                                <label>Enter Custom Specialization</label>
+                                                <input 
+                                                    type="text" 
+                                                    required 
+                                                    placeholder="e.g. Dentistry, Dermatology..." 
+                                                    value={customSpecialization} 
+                                                    onChange={e => setCustomSpecialization(e.target.value)} 
+                                                />
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         )}

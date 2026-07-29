@@ -417,6 +417,10 @@ body {
     box-shadow: 0 0 10px var(--color-primary-glow);
     background: rgba(255, 255, 255, 0.04);
 }
+.form-group select option {
+    background-color: #0d0b1a !important;
+    color: #e2e8f0 !important;
+}
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1397,5 +1401,116 @@ body {
 @keyframes pulse {
     from { transform: scale(1); opacity: 0.8; }
     to { transform: scale(1.15); opacity: 1; }
+}
+
+/* Core Themes Variable Overrides */
+/* 1. Slate Dark theme (Default) */
+.theme-slate-dark {
+    --bg-dark: #070510;
+    --bg-surface: rgba(255, 255, 255, 0.03);
+    --bg-surface-hover: rgba(255, 255, 255, 0.07);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --color-text: #e2e8f0;
+    --color-text-muted: #94a3b8;
+    --color-primary: #7209b7;
+    --color-primary-light: #9d4edd;
+    --color-primary-glow: rgba(157, 78, 221, 0.25);
+}
+
+/* 2. Light theme */
+.theme-light {
+    --bg-dark: #f8fafc;
+    --bg-surface: rgba(15, 23, 42, 0.04);
+    --bg-surface-hover: rgba(15, 23, 42, 0.08);
+    --border-color: rgba(15, 23, 42, 0.1);
+    --color-text: #0f172a;
+    --color-text-muted: #64748b;
+    --color-primary: #3b82f6;
+    --color-primary-light: #2563eb;
+    --color-primary-glow: rgba(37, 99, 235, 0.15);
+}
+
+/* 3. Cyberpunk Neon theme */
+.theme-cyberpunk {
+    --bg-dark: #02000a;
+    --bg-surface: rgba(244, 63, 94, 0.05);
+    --bg-surface-hover: rgba(244, 63, 94, 0.12);
+    --border-color: rgba(244, 63, 94, 0.2);
+    --color-text: #f8fafc;
+    --color-text-muted: #fda4af;
+    --color-primary: #db2777;
+    --color-primary-light: #f43f5e;
+    --color-primary-glow: rgba(244, 63, 94, 0.35);
+}
+
+/* Theme compatibility styles for light mode card elements */
+.theme-light .glass-card, 
+.theme-light .sidebar, 
+.theme-light .modal,
+.theme-light .user-badge {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.04) !important;
+}
+
+.theme-light .sidebar nav button.active, 
+.theme-light .sidebar nav button:hover {
+    background: rgba(37, 99, 235, 0.08) !important;
+}
+
+.theme-light .message-bubble.sent {
+    background: var(--color-primary-light) !important;
+    color: white !important;
+}
+
+.theme-light .message-bubble.received {
+    background: rgba(15, 23, 42, 0.05) !important;
+}
+
+.theme-light .chat-input-area {
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.theme-light .form-group input, 
+.theme-light .form-group select, 
+.theme-light .form-group textarea {
+    background: rgba(15, 23, 42, 0.02) !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+}
+
+.theme-light .form-group select option {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+/* Smooth Tab Transitions */
+.page-enter {
+    animation: slideUpFade 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Ambient Pulsing Glow for Ringing Dialog */
+.ringing-ambient-glow {
+    animation: glowPulse 2s infinite ease-in-out;
+}
+
+@keyframes glowPulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.15), 0 0 40px rgba(16, 185, 129, 0.05);
+    }
+    50% {
+        box-shadow: 0 0 35px rgba(16, 185, 129, 0.35), 0 0 60px rgba(16, 185, 129, 0.15);
+    }
 }
 

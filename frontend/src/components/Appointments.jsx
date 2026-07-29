@@ -245,10 +245,9 @@ export default function Appointments({ user, token, appointments, reloadAppointm
                             <label>Filter Specialization</label>
                             <select value={specFilter} onChange={e => { setSpecFilter(e.target.value); setSearchQuery(''); }}>
                                 <option value="">All Specializations</option>
-                                <option value="Cardiology">Cardiology</option>
-                                <option value="General Medicine">General Medicine</option>
-                                <option value="Pediatrics">Pediatrics</option>
-                                <option value="Neurology">Neurology</option>
+                                {Array.from(new Set(doctors.map(d => d.specialization).filter(Boolean))).map(spec => (
+                                    <option key={spec} value={spec}>{spec}</option>
+                                ))}
                             </select>
                         </div>
                     </div>

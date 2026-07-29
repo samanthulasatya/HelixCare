@@ -37,6 +37,29 @@ export default function App() {
     const [videoMuted, setVideoMuted] = useState(false);
     const [callDuration, setCallDuration] = useState('00:00');
 
+    // Theme, screen sharing, and audio ringtone states
+    const [theme, setTheme] = useState(localStorage.getItem('helix_theme') || 'theme-slate-dark');
+    const [screenSharing, setScreenSharing] = useState(false);
+    const screenStreamRef = useRef(null);
+    const ringtoneRef = useRef(null);
+
+    const handleThemeChange = (newTheme) => {
+        setTheme(newTheme);
+        localStorage.setItem('helix_theme', newTheme);
+        document.documentElement.className = newTheme;
+    };
+
+    const stopRingtone = () => {
+        try {
+            if (ringtoneRef.current) {
+                ringtoneRef.current.pause();
+                ringtoneRef.current.currentTime = 0;
+            }
+        } catch (e) {
+            console.error("Failed to stop ringtone:", e);
+        }
+    };
+
     // Ref pointers
     const stompClientRef = useRef(null);
     const peerConnectionRef = useRef(null);
@@ -50,6 +73,11 @@ export default function App() {
     const selectedChatSessionRef = useRef(selectedChatSession);
     const localStreamRef = useRef(localStream);
     const callActiveRef = useRef(callActive);
+
+    // Apply the saved theme on initial mount
+    useEffect(() => {
+        document.documentElement.className = theme;
+    }, [theme]);
 
     useEffect(() => {
         const handleNativeLogout = (e) => {
@@ -173,12 +201,36 @@ export default function App() {
             }
             setIncomingCallAppointmentId(notif.appointmentId);
             setIncomingCallSender(notif.sender);
+
+            // Ringtone audio triggers
+            try {
+                if (!ringtoneRef.current) {
+                    ringtoneRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1359/1359-500.wav');
+                    ringtoneRef.current.loop = true;
+                }
+                ringtoneRef.current.play().catch(e => console.log("Ringtone autoplay blocked until user click gesture: ", e));
+            } catch (e) {
+                console.error("Audio playback failure: ", e);
+            }
         } else if (notif.type === 'VIDEO_CALL_DECLINE') {
+            stopRingtone();
             alert(notif.message);
             hangUpCall(false);
         } else if (notif.type === 'VIDEO_CALL_CANCEL') {
+            stopRingtone();
+            const wasIncoming = incomingCallAppointmentId !== null;
             setIncomingCallAppointmentId(null);
             setIncomingCallSender(null);
+            if (wasIncoming) {
+                const missedCalls = JSON.parse(localStorage.getItem('missed_calls') || '[]');
+                missedCalls.push({
+                    sender: notif.sender || 'Unknown Provider',
+                    timestamp: new Date().toLocaleString(),
+                    appointmentId: notif.appointmentId
+                });
+                localStorage.setItem('missed_calls', JSON.stringify(missedCalls));
+                window.dispatchEvent(new Event('missed_calls_updated'));
+            }
             alert("Incoming call cancelled by caller.");
         } else {
             setNotifications(prev => [notif, ...prev]);
@@ -313,7 +365,12 @@ export default function App() {
 
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun.services.mozilla.com' }
+            ]
         });
 
         pc.onicecandidate = (event) => {
@@ -445,6 +502,7 @@ export default function App() {
     };
 
     const acceptIncomingCall = () => {
+        stopRingtone();
         const appId = incomingCallAppointmentId;
         setIncomingCallAppointmentId(null);
         setIncomingCallSender(null);
@@ -488,6 +546,7 @@ export default function App() {
     };
 
     const declineIncomingCall = () => {
+        stopRingtone();
         const appId = incomingCallAppointmentId;
         setIncomingCallAppointmentId(null);
         setIncomingCallSender(null);
@@ -510,38 +569,53 @@ export default function App() {
     };
 
     const hangUpCall = (notifyPeer) => {
-        if (notifyPeer && callActiveRef.current) {
-            if (peerConnectionRef.current) {
-                const duration = document.getElementById('callDuration') ? document.getElementById('callDuration').innerText : '00:00';
-                sendSystemChatMessage(selectedChatSessionRef.current.id, `Video consultation session ended. Duration: ${duration}`);
-                sendRtcSignal('hangup', {});
-            } else if (selectedChatSessionRef.current) {
-                const appointment = appointmentsRef.current.find(a => a.id === selectedChatSessionRef.current.id);
-                if (appointment && stompClientRef.current) {
-                    let targetDest = userRef.current.role === 'PATIENT' ? 
-                        `/topic/notifications/doctor/${appointment.doctor.id}` : 
-                        `/topic/notifications/patient/${appointment.patient.id}`;
-                    
-                    stompClientRef.current.publish({
-                        destination: targetDest,
-                        body: JSON.stringify({
-                            type: 'VIDEO_CALL_CANCEL',
-                            message: `Call cancelled by ${userRef.current.username}.`,
-                            appointmentId: appointment.id
-                        })
-                    });
-                    sendSystemChatMessage(appointment.id, "Video call invitation cancelled by caller.");
+        try {
+            stopScreenShare();
+        } catch (e) {}
+        try {
+            if (notifyPeer && callActiveRef.current) {
+                if (peerConnectionRef.current && selectedChatSessionRef.current) {
+                    const duration = document.getElementById('callDuration') ? document.getElementById('callDuration').innerText : '00:00';
+                    sendSystemChatMessage(selectedChatSessionRef.current.id, `Video consultation session ended. Duration: ${duration}`);
+                    sendRtcSignal('hangup', {});
+                } else if (selectedChatSessionRef.current) {
+                    const appointment = appointmentsRef.current.find(a => a.id === selectedChatSessionRef.current.id);
+                    if (appointment && stompClientRef.current) {
+                        let targetDest = userRef.current.role === 'PATIENT' ? 
+                            `/topic/notifications/doctor/${appointment.doctor.id}` : 
+                            `/topic/notifications/patient/${appointment.patient.id}`;
+                        
+                        stompClientRef.current.publish({
+                            destination: targetDest,
+                            body: JSON.stringify({
+                                type: 'VIDEO_CALL_CANCEL',
+                                message: `Call cancelled by ${userRef.current.username}.`,
+                                appointmentId: appointment.id
+                            })
+                        });
+                        sendSystemChatMessage(appointment.id, "Video call invitation cancelled by caller.");
+                    }
                 }
             }
+        } catch (e) {
+            console.error("Error during hangup signaling:", e);
         }
 
-        if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach(track => track.stop());
-            setLocalStream(null);
+        try {
+            if (localStreamRef.current) {
+                localStreamRef.current.getTracks().forEach(track => track.stop());
+            }
+        } catch (e) {
+            console.error("Error stopping tracks:", e);
         }
+        setLocalStream(null);
 
         if (peerConnectionRef.current) {
-            peerConnectionRef.current.close();
+            try {
+                peerConnectionRef.current.close();
+            } catch (e) {
+                console.error("Error closing peerConnection:", e);
+            }
             peerConnectionRef.current = null;
         }
 
@@ -566,6 +640,64 @@ export default function App() {
         localStream.getVideoTracks().forEach(track => track.enabled = !target);
         setVideoMuted(target);
     };
+
+    function toggleScreenShare() {
+        if (!peerConnectionRef.current) {
+            alert("No active WebRTC peer connection exists.");
+            return;
+        }
+
+        if (screenSharing) {
+            stopScreenShare();
+        } else {
+            navigator.mediaDevices.getDisplayMedia({ video: true })
+            .then(stream => {
+                screenStreamRef.current = stream;
+                setScreenSharing(true);
+
+                const screenTrack = stream.getVideoTracks()[0];
+                screenTrack.onended = () => {
+                    stopScreenShare();
+                };
+
+                const senders = peerConnectionRef.current.getSenders();
+                const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+                if (videoSender) {
+                    videoSender.replaceTrack(screenTrack);
+                }
+
+                const localVideo = document.getElementById('localVideo');
+                if (localVideo) {
+                    localVideo.srcObject = stream;
+                }
+            })
+            .catch(err => {
+                console.error("Error sharing screen:", err);
+            });
+        }
+    }
+
+    function stopScreenShare() {
+        if (screenStreamRef.current) {
+            screenStreamRef.current.getTracks().forEach(track => track.stop());
+            screenStreamRef.current = null;
+        }
+        setScreenSharing(false);
+
+        if (peerConnectionRef.current && localStreamRef.current) {
+            const cameraTrack = localStreamRef.current.getVideoTracks()[0];
+            const senders = peerConnectionRef.current.getSenders();
+            const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+            if (videoSender && cameraTrack) {
+                videoSender.replaceTrack(cameraTrack);
+            }
+        }
+
+        const localVideo = document.getElementById('localVideo');
+        if (localVideo) {
+            localVideo.srcObject = localStreamRef.current;
+        }
+    }
 
     const startCallTimer = () => {
         let seconds = 0;
@@ -646,6 +778,20 @@ export default function App() {
                     </nav>
 
                     <div className="sidebar-footer">
+                        <div style={{ marginBottom: '15px' }} className="form-group">
+                            <label style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px', display: 'block', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+                                🎨 Visual Theme
+                            </label>
+                            <select 
+                                value={theme} 
+                                onChange={(e) => handleThemeChange(e.target.value)} 
+                                style={{ width: '100%', padding: '8px 12px', fontSize: '12px' }}
+                            >
+                                <option value="theme-slate-dark">Slate Dark</option>
+                                <option value="theme-light">Helix Light</option>
+                                <option value="theme-cyberpunk">Neon Cyberpunk</option>
+                            </select>
+                        </div>
                         <button 
                             className="btn btn-secondary btn-block" 
                             id="btnLogout" 
@@ -684,8 +830,8 @@ export default function App() {
                 {!token ? (
                     <Auth onAuthSuccess={handleAuthSuccess} />
                 ) : (
-                    <>
-                        {activeTab === 'tab-dashboard' && <Dashboard user={user} />}
+                    <div className="page-enter" key={activeTab} style={{ width: '100%' }}>
+                        {activeTab === 'tab-dashboard' && <Dashboard user={user} onNavigate={setActiveTab} />}
                         {activeTab === 'tab-appointments' && (
                             <Appointments 
                                 user={user} 
@@ -707,7 +853,7 @@ export default function App() {
                             />
                         )}
                         {activeTab === 'tab-soap' && <SoapInsurance />}
-                    </>
+                    </div>
                 )}
             </main>
 
@@ -727,6 +873,8 @@ export default function App() {
                 onHangUp={hangUpCall}
                 onToggleAudio={toggleAudio}
                 onToggleVideo={toggleVideo}
+                screenSharing={screenSharing}
+                onToggleScreenShare={toggleScreenShare}
             />
         </div>
     );

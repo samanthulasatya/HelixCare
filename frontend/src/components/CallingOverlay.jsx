@@ -14,7 +14,9 @@ export default function CallingOverlay({
     onDeclineCall,
     onHangUp,
     onToggleAudio,
-    onToggleVideo
+    onToggleVideo,
+    screenSharing,
+    onToggleScreenShare
 }) {
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
@@ -36,7 +38,7 @@ export default function CallingOverlay({
             {/* Incoming Call Ringing Dialog */}
             {incomingCallAppointmentId && (
                 <div className="modal-overlay active">
-                    <div className="modal glass-card" style={{ padding: '30px', maxWidth: '400px', textAlign: 'center' }}>
+                    <div className="modal glass-card ringing-ambient-glow" style={{ padding: '30px', maxWidth: '400px', textAlign: 'center' }}>
                         <div style={{
                             width: '80px',
                             height: '80px',
@@ -79,7 +81,7 @@ export default function CallingOverlay({
                                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', display: 'inline-block', animation: 'pulse 1.5s infinite' }}></span>
                                 Live Teleconsultation Session
                             </h3>
-                            <div className="call-duration" style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#fca5a5', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, fontFamily: 'monospace' }}>
+                            <div id="callDuration" className="call-duration" style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#fca5a5', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, fontFamily: 'monospace' }}>
                                 {callDuration || "00:00"}
                             </div>
                         </div>
@@ -123,6 +125,14 @@ export default function CallingOverlay({
                                 ) : (
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
                                 )}
+                            </button>
+                            <button 
+                                className={`btn-circle ${screenSharing ? 'active-share' : ''}`} 
+                                onClick={onToggleScreenShare}
+                                style={{ width: '50px', height: '50px', borderRadius: '50%', background: screenSharing ? 'var(--color-success)' : 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'var(--transition-smooth)' }}
+                                title={screenSharing ? "Stop Screen Share" : "Share Screen"}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
                             </button>
                             <button 
                                 className="btn-circle btn-danger" 
