@@ -890,17 +890,7 @@ export default function App() {
                     <>
                         {/* Top bar header with persistent Bell Notification triggers */}
                         <div className="top-bar">
-                            <div className="search-bar-wrapper">
-                                <i className="fa-solid fa-magnifying-glass"></i>
-                                <input 
-                                    type="text" 
-                                    placeholder="Search consultations, files, doctors..." 
-                                    value={searchQuery}
-                                    onChange={e => setSearchQuery(e.target.value)}
-                                    style={{ background: 'transparent', border: 'none', color: 'var(--color-text)', outline: 'none', width: '100%', fontSize: '13px' }}
-                                />
-                            </div>
-                            <div className="top-bar-actions">
+                            <div className="top-bar-actions" style={{ marginLeft: 'auto' }}>
                                 <div className={`notification-bell ${sysNotifications.filter(n => !n.read).length > 0 ? 'has-unread' : ''}`} onClick={() => setShowNotifTray(!showNotifTray)} style={{ cursor: 'pointer' }}>
                                     <i className="fa-solid fa-bell"></i>
                                     {sysNotifications.filter(n => !n.read).length > 0 && (

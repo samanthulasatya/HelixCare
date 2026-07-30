@@ -78,6 +78,11 @@ export default function Appointments({ user, token, appointments, reloadAppointm
 
     const handleBookSubmit = (e) => {
         e.preventDefault();
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (bookDate < todayStr) {
+            alert("Cannot book an appointment for a past date.");
+            return;
+        }
         if (!selectedSlot) {
             alert("Please choose an available time slot.");
             return;
@@ -334,6 +339,7 @@ export default function Appointments({ user, token, appointments, reloadAppointm
                                 <input 
                                     type="date" 
                                     required 
+                                    min={new Date().toISOString().split('T')[0]}
                                     value={bookDate} 
                                     onChange={e => setBookDate(e.target.value)} 
                                 />

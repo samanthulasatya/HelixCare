@@ -35,21 +35,23 @@ We have successfully implemented the visual, calling, and chat enhancements for 
   2. In `initializeLocalVideoAndJoinCall`, we set `localStreamRef.current = stream` immediately when the promise resolves and pass the stream directly to `createPeerConnection`.
   3. Added a dynamic track-addition fallback under the `offer` signaling case block in `App.jsx` to dynamically attach local camera tracks if they weren't bound when the connection was initially configured. Both caller and receiver now have perfect mutual visibility!
 
-### 💬 Premium Chat Room Overhaul & Keyboard Locking
+### 💬 Premium Chat Room Overhaul, Keyboard Locking & Auto-Scroll
 * Overhauled the **Virtual Chat Room** layout to take up the full viewport height (`height: calc(100vh - 130px)`), floating as a clean modern panel.
 * **The Keyboard/Input Squish Bug**: Previously, the `.page-enter` wrapper was set to `display: flex`, but because its default direction was row and it lacked a block-prop height resolver, the `<Chat />` window grew dynamically with message logs. This pushed the message input row off-screen where it was hidden by the wrapper's overflow setting.
 * **The Fix**:
   1. I removed the `display: flex` override from `.page-enter` in `App.jsx`, allowing standard block height propagation from the parent `.content-body` height of `calc(100vh - 75px)` down to `<Chat />`.
   2. Applied `flex-shrink: 0` to both the `.chat-header` and the message input `<form>` inside `Chat.jsx` to prevent the browser flex engine from squeezing them to 0px under any conditions. The input row remains perfectly locked and visible at the bottom of the screen!
+* **Auto-Scroll to Bottom**: Configured a React `messagesEndRef` element with a `useEffect` scrolling anchor inside `Chat.jsx`. Opening a chat or receiving new text/file uploads instantly scrolls the window to the bottom, focusing on the latest messages smoothly.
 * Redesigned the sidebar session buttons with dedicated user avatars, bold names, and smooth active state transitions.
 * Modernized the chat input text box (iOS / Discord style) with deep rounded corners (`border-radius: 24px`), soft backgrounds, and glowing border focus transitions.
 * **Signaling Filter**: We filter out all messages starting with `__WEBRTC__:` when loading historical logs from the database, ensuring clean and professional text chat histories.
 
-### 📎 Base64 Chat File Sharing & Buffer Limits Fix
+### 📎 Base64 Chat File Sharing, MySQL MEDIUMTEXT & Buffer Limits
 * A clip attachment button (`fa-paperclip`) is mounted next to the chat text input field.
 * Clicking it opens a file selector. Files are limited to **1MB** to prevent database bloating.
 * Selected documents/images are converted to Base64 strings using a `FileReader` and broadcasted via Stomp WebSockets inside a structured token `[FILE:filename:mime]base64...`.
 * The message parser renders files beautifully: images show up inline with instant previews, and non-image files (like PDFs) display inside high-contrast download card boxes.
+* **Base64 DB Truncation Fix**: Changed the `ChatMessage` model's `content` field column mapping definition inside `ChatMessage.java` from `TEXT` (limited to 64KB) to **`MEDIUMTEXT`** (supporting up to 16MB). This prevents database truncation exceptions and WebSocket failures when sending Base64 strings of large files.
 * **WebSocket Size Limit Fix**: We overrode `configureWebSocketTransport` inside `WebSocketConfig.java` in the backend `gateway-service` to set `messageSizeLimit` and `sendBufferSizeLimit` to **5MB** (up from the Spring default of 64KB). This allows seamless transfer of large Base64 files without triggering session limit exceptions or socket terminations.
 
 ### 🛡️ SOAP Claims Verification & Card Payment checkout
@@ -99,10 +101,12 @@ We have successfully implemented the visual, calling, and chat enhancements for 
   * **Doctor Directory**: Incorporates the global search term to dynamically query the database for doctors by name or specialization when booking a new appointment, letting users search for doctors globally!
   * **Chat tab**: Filters the active consultations sidebar links instantly.
   * **Document Vault tab**: Filters vault records and displays a customized "No matching files" layout helper if search yields zero results.
+* **Search Bar Removal**: Removed the global search input field from the top bar header as requested, leaving the pulsing notification bell drawer neatly on the right.
 
-### 🔒 Appointment Conflicts Locking & JSON Parse Fixes
-* **Booking Validation**: The backend `appointment-service` contains real-time validation checks checking database records for scheduling overlaps. If a patient tries to book a doctor at a time slot that is already booked, the backend throws an `AppointmentConflictException`.
+### 🔒 Appointment Conflicts Locking, Past Dates & JSON Parse Fixes
+* **Booking Overlap Validation**: The backend `appointment-service` contains real-time validation checks checking database records for scheduling overlaps. If a patient tries to book a doctor at a time slot that is already booked, the backend throws an `AppointmentConflictException`.
 * **Frontend Error Parser**: I updated `Appointments.jsx` to parse JSON error payloads properly. If the backend returns a `409 Conflict` response, the frontend extracts the specific `.message` property (e.g. *"Doctor already has an appointment booked for date..."*) and displays it in a clean alert modal, rather than displaying raw JSON strings.
+* **Past Date Block**: Configured `min={new Date().toISOString().split('T')[0]}` on the modal's date input field and added frontend submit validation check. The patient cannot pick or book appointments on past dates.
 
 ### 👁️ Password Visibility Toggle (Show/Hide)
 * **Auth Forms Upgrade**: Added a state wrapper `showPassword` inside `Auth.jsx`.
